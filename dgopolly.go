@@ -84,6 +84,15 @@ func newPolly(creds credentials.Credentials, aws aws.Config) (ourPolly DgoPolly)
 }
 
 func (p *DgoPolly) say(vc *discordgo.VoiceConnection, text string) {
+	opusChannel := p.getSynthSpeech(text)
+	for {
+		opus, ok := <-*opusChannel
+		if !ok {
+			return
+		}
+
+		vc.OpusSend <- opus
+	}
 }
 
 //Returns an Opus channel for play at 48000Hz, what discordGo needs for vc.OpusSend
