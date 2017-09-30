@@ -63,27 +63,29 @@ func LoadConfig() aws.Config {
 //ultimate goal is to have a function that we can just say
 type DgoPolly struct {
 	pollySession polly.Polly
-	pollyConfig  polly.SynthesizeSpeechInput
+	PollyConfig  polly.SynthesizeSpeechInput
 }
 
-func newPolly(creds credentials.Credentials, aws aws.Config) (ourPolly DgoPolly) {
+func NewPolly(aws aws.Config) (ourPolly DgoPolly) {
 	session, err := session2.NewSession(&aws)
 	relax(err)
 	ourPolly.pollySession = *polly.New(session)
 
 	testToSynth := "Default Message"
 	outputFormat := polly.OutputFormatPcm
+	voiceid := polly.VoiceIdSalli
 
 	pollyconfig := polly.SynthesizeSpeechInput{
 		Text:         &testToSynth,
 		OutputFormat: &outputFormat,
+		VoiceId:      &voiceid,
 	}
 
-	ourPolly.pollyConfig = pollyconfig
+	ourPolly.PollyConfig = pollyconfig
 	return
 }
 
-func (p *DgoPolly) say(vc *discordgo.VoiceConnection, text string) {
+func (p *DgoPolly) Say(vc *discordgo.VoiceConnection, text string) {
 	opusChannel := p.getSynthSpeech(text)
 	for {
 		opus, ok := <-*opusChannel
@@ -97,9 +99,9 @@ func (p *DgoPolly) say(vc *discordgo.VoiceConnection, text string) {
 
 //Returns an Opus channel for play at 48000Hz, what discordGo needs for vc.OpusSend
 func (p *DgoPolly) getSynthSpeech(text string) *chan []byte {
-	p.pollyConfig.Text = &text
+	p.PollyConfig.Text = &text
 
-	request, response := p.pollySession.SynthesizeSpeechRequest(&p.pollyConfig)
+	request, response := p.pollySession.SynthesizeSpeechRequest(&p.PollyConfig)
 	err := request.Send()
 	relax(err)
 
@@ -115,7 +117,6 @@ func (p *DgoPolly) getSynthSpeech(text string) *chan []byte {
 	loadBuffer := func(input io.Reader) {
 
 		defer func() {
-			fmt.Println("done loading frames")
 			wg.Done()
 			close(encodeChan)
 		}()
@@ -138,7 +139,6 @@ func (p *DgoPolly) getSynthSpeech(text string) *chan []byte {
 
 	encodeBuffer := func() {
 		defer func() {
-			fmt.Println("Done encoding new frames")
 			wg.Done()
 			close(outputChan)
 		}()
