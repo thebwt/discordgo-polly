@@ -2,7 +2,6 @@ package discordgo_polly
 
 import (
 	"encoding/binary"
-	"fmt"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	session2 "github.com/aws/aws-sdk-go/aws/session"
